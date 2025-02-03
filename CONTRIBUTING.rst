@@ -7,6 +7,8 @@ Contributor Guide
    This document assumes some familiarity with contributing to open source
    scientific Python projects using GitHub pull requests. If this does not
    describe you, you may first want to see the :ref:`contributing_faq`.
+   If you are using a LLM or any other AI model, you will still need to
+   follow the process described here.
 
 .. _dev_workflow:
 
@@ -78,8 +80,8 @@ Development Workflow
          # Test your installation
          pytest --pyargs networkx
 
-   * Finally, we recommend you use a pre-commit hook, which runs black when
-     you type ``git commit``::
+   * Finally, we recommend you install pre-commit which checks
+     that your code matches formatting guidelines::
 
        pre-commit install
 
@@ -122,7 +124,7 @@ Development Workflow
 
          pre-commit run --all-files
 
-4. Submit your contribution:
+5. Submit your contribution:
 
    * Push your changes back to your fork on GitHub::
 
@@ -135,7 +137,7 @@ Development Workflow
      <http://groups.google.com/group/networkx-discuss>`_ to explain your changes or
      to ask for review.
 
-5. Review process:
+6. Review process:
 
    * Every Pull Request (PR) update triggers a set of `continuous integration
      <https://en.wikipedia.org/wiki/Continuous_integration>`_ services
@@ -165,10 +167,10 @@ Development Workflow
       issue number 1480, you could use the phrase "Fixes #1480" in the PR
       description or commit message.
 
-6. Document changes
-
-   If your change introduces any API modifications, please update
-   ``doc/release/release_dev.rst``.
+7. Document deprecations and API changes
+   
+   If your change introduces any API modifications including deprecations,
+   please make sure the PR has the ``type: API`` label.
 
    To set up a function for deprecation:
 
@@ -177,7 +179,7 @@ Development Workflow
          msg = "curly_hair is deprecated and will be removed in v3.0. Use sum() instead."
          warnings.warn(msg, DeprecationWarning)
 
-   - Add a warning to ``networkx/conftest.py``::
+   - Add a warnings filter to ``networkx/conftest.py``::
 
          warnings.filterwarnings(
              "ignore", category=DeprecationWarning, message=<start of message>
@@ -189,14 +191,6 @@ Development Workflow
      .. code-block:: rst
 
         * In ``utils/misc.py`` remove ``generate_unique_node`` and related tests.
-
-   - Add a note (and a link to the PR) to ``doc/release/release_dev.rst``:
-
-     .. code-block:: rst
-
-        [`#4281 <https://github.com/networkx/networkx/pull/4281>`_]
-        Deprecate ``read_yaml`` and ``write_yaml``.
-
 
    .. note::
 
@@ -282,7 +276,7 @@ Guidelines
    import pandas as pd
    import networkx as nx
 
-  After importing `sp`` for ``scipy``::
+  After importing ``sp`` for ``scipy``::
 
    import scipy as sp
 
@@ -315,7 +309,18 @@ Guidelines
       def function_only_for_Graph(G, others):
           # function not for directed graphs *or* for multigraphs
           pass
+* Functions should avoid returning numpy scalars (e.g., `numpy.int64`, `numpy.float64`)
+  to ensure better compatibility and avoid issues with parts of the codebase that may 
+  not recognize or handle numpy scalars properly. If a function returns a numpy scalar,
+  it should be converted to a native Python type.
 
+  .. code-block:: python
+
+      def convert_to_python_type():
+          # Perform some computation resulting in a numpy scalar
+          a = np.int64(42)  
+          # Convert to a Python scalar before returning
+          return a.item()
 
 Testing
 -------
@@ -379,6 +384,15 @@ We will help you create the tests and sort out any kind of problem during code r
 Image comparison
 ~~~~~~~~~~~~~~~~
 
+.. note::
+   Image comparison tests require the ``pytest-mpl`` extension, which can be
+   installed with::
+
+      pip install pytest-mpl
+
+   If ``pytest-mpl`` is not installed, the test suite may emit warnings related
+   to ``pytest.mark.mpl_image_compare`` - these can be safely ignored.
+
 To run image comparisons::
 
     $ PYTHONPATH=. pytest --mpl --pyargs networkx.drawing
@@ -403,7 +417,7 @@ Then create a baseline image to compare against later::
 
     $ pytest -k test_barbell --mpl-generate-path=networkx/drawing/tests/baseline
 
-.. note: In order to keep the size of the repository from becoming too large, we
+.. note:: In order to keep the size of the repository from becoming too large, we
    prefer to limit the size and number of baseline images we include.
 
 And test::
@@ -413,27 +427,7 @@ And test::
 Documentation
 -------------
 
-Building the documentation locally requires that the additional dependencies
-specified in ``requirements/doc.txt`` be installed in your development
-environment.
-
-The documentation is built with ``sphinx``. To build the documentation locally,
-navigate to the ``doc/`` directory and::
-
-    make html
-
-This will generate both the reference documentation as well as the example
-gallery. If you want to build the documentation *without* building the
-gallery examples use::
-
-    make html-noplot
-
-The build products are stored in ``doc/build/`` and can be viewed directly.
-For example, to view the built html, open ``build/html/index.html``
-in your preferred web browser.
-
-.. note: ``sphinx`` supports many other output formats. Type ``make`` without
-   any arguments to see all the built-in options.
+.. include:: ../README.rst
 
 Adding examples
 ~~~~~~~~~~~~~~~
@@ -458,7 +452,7 @@ General guidelines for making a good gallery plot:
 * Examples should highlight a single feature/command.
 * Try to make the example as simple as possible.
 * Data needed by examples should be included in the same directory and the example script.
-* Add comments to explain things are aren't obvious from reading the code.
+* Add comments to explain things that aren't obvious from reading the code.
 * Describe the feature that you're showcasing and link to other relevant parts of the
   documentation.
 
@@ -489,6 +483,29 @@ If the resource is uploaded as a PDF/DOCX/PPT on the web (lecture notes, present
 to use the `wayback machine <https://web.archive.org/>`_ to create a snapshot of the resource
 and link the internet archive link. The URL of the resource can change, and it creates unreachable
 links from the documentation.
+
+Using Math Formulae and Latex Formatting in Documentation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When working with docstrings that contain math symbols or formulae
+use raw strings (``r"""``) to ensure proper rendering. 
+While LaTeX formatting can improve the appearance of the rendered documentation, 
+it's best to keep it simple and readable. 
+
+An example of a math formula::
+      
+      .. math:: 
+          Ax = \lambda x
+
+.. math:: 
+    Ax = \lambda x
+
+Some inline math::
+    
+    These are Cheeger's Inequalities for \d-Regular graphs: 
+    $\frac{d- \lambda_2}{2} \leq h(G) \leq \sqrt{2d(d- \lambda_2)}$
+   
+These are Cheeger's Inequalities for \d-Regular graphs: 
+$\frac{d- \lambda_2}{2} \leq h(G) \leq \sqrt{2d(d- \lambda_2)}$
 
 Bugs
 ----

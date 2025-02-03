@@ -1,4 +1,5 @@
 """Semiconnectedness."""
+
 import networkx as nx
 from networkx.utils import not_implemented_for, pairwise
 
@@ -6,8 +7,9 @@ __all__ = ["is_semiconnected"]
 
 
 @not_implemented_for("undirected")
+@nx._dispatchable
 def is_semiconnected(G):
-    """Returns True if the graph is semiconnected, False otherwise.
+    r"""Returns True if the graph is semiconnected, False otherwise.
 
     A graph is semiconnected if and only if for any pair of nodes, either one
     is reachable from the other, or they are mutually reachable.
